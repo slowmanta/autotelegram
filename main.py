@@ -1,6 +1,5 @@
-import glob
+import ctypes
 import json
-import os
 import shutil
 import threading
 import time
@@ -46,16 +45,19 @@ class AutoTelegram(tkinter.Tk):
 class FirstPage(tkinter.Frame):
     def __init__(self, parent, controller):
         self.windowWidth = 360
-        self.windowHeight = 60
+        self.windowHeight = 105
         tkinter.Frame.__init__(self, parent)
 
         settingChromeBtn = Button(self, text='Chrome', width=22, height=2,
                                   command=lambda: controller.show_frame('Chrome'))
-        settingChromeBtn.grid(row=2, column=0, pady=8, padx=6.5)
+        settingChromeBtn.grid(row=0, column=0, pady=8, padx=6.5)
 
         settingFirefoxBtn = Button(self, text='Firefox', width=22, height=2,
                                    command=lambda: controller.show_frame('Firefox'))
-        settingFirefoxBtn.grid(row=2, column=1, pady=8, padx=6.5)
+        settingFirefoxBtn.grid(row=0, column=1, pady=8, padx=6.5)
+
+        Label(self, text="Developed by Nam MT", width=30, fg='red').grid(row=1, columnspan=2)
+        Label(self, text="fb.com/congionho33", width=30, fg='blue').grid(row=2, columnspan=2)
 
 
 class Chrome(tkinter.Frame):
@@ -64,48 +66,51 @@ class Chrome(tkinter.Frame):
         self.autoLogText = None
         self.addProfilePopup = None
         self.textProfilePopup = None
-        self.groupNamePopup = None
+        self.settingPopup = {}
         self.autoLog = None
-        self.groupNameData = {}
+        self.settingData = {}
         self.profileData = {}
-        self.windowWidth = 1202
-        self.windowHeight = 350
+        self.windowWidth = 1170
+        self.windowHeight = 410
         self.settingPath = str(pathlib.Path.cwd()) + '\\settings\\chrome\\'
         self.serviceChrome = ChromeService(str(pathlib.Path.cwd()) + r'\chromedriver.exe')
         tkinter.Frame.__init__(self, parent)
 
-        Button(self, text='Group Name', width=15, height=2, command=self.groupNameView) \
+        Button(self, text='Group Name', width=25, height=2, command=self.groupNameView) \
             .grid(row=0, column=0, padx=5, pady=5)
 
-        Button(self, text='Open Profile', width=15, height=2, command=self.openProfile) \
+        Button(self, text='Open Profile', width=25, height=2, command=self.openProfile) \
             .grid(row=1, column=0, padx=5, pady=5)
 
-        Button(self, text='Add Profile', width=15, height=2, command=self.addProfileView) \
+        Button(self, text='Add Profile', width=25, height=2, command=self.addProfileView) \
             .grid(row=2, column=0, padx=5, pady=5)
 
-        Button(self, text='Text Profile', width=15, height=2, command=self.textProfileView) \
+        Button(self, text='Text Profile', width=25, height=2, command=self.textProfileView) \
             .grid(row=3, column=0, padx=5, pady=5)
 
-        Button(self, text='Delete Profile', width=15, height=2, command=self.deleteProfile) \
+        Button(self, text='Delete Profile', width=25, height=2, command=self.deleteProfile, bg='#c82333', fg='#fff') \
             .grid(row=4, column=0, padx=5, pady=5)
 
-        Button(self, text='Run Auto', width=15, height=2, command=self.runAuto, bg='green', fg='#fff') \
-            .grid(row=4, column=0, padx=5, pady=5)
+        Button(self, text='Number Of Running Window', width=25, height=2, command=self.threadView, bg='#17a2b8', fg='#fff') \
+            .grid(row=5, column=0, padx=5, pady=5)
 
-        Button(self, text='Back', width=15, height=2, command=lambda: controller.show_frame('FirstPage')) \
+        Button(self, text='Run Auto', width=25, height=2, command=self.runAuto, bg='#28a745', fg='#fff') \
             .grid(row=6, column=0, padx=5, pady=5)
+
+        Button(self, text='Back', width=25, height=2, command=lambda: controller.show_frame('FirstPage'), bg='#e2e6ea', fg='#212529') \
+            .grid(row=7, column=0, padx=5, pady=5)
 
         Label(self, text='List Profiles', font=('bold', 16)) \
             .grid(row=0, column=1, padx=20, pady=5)
 
-        self.listProfileTv = ttk.Treeview(self, height=12)
-        self.listProfileTv.grid(row=1, rowspan=6, column=1, padx=20, pady=5)
+        self.listProfileTv = ttk.Treeview(self, height=15)
+        self.listProfileTv.grid(row=1, rowspan=7, column=1, padx=20, pady=5)
 
         self.listProfileTv['columns'] = ('name', 'path', 'text', 'stt')
         self.listProfileTv.column('#0', anchor=CENTER, width=50)
         self.listProfileTv.column('name', anchor=CENTER, width=125)
         self.listProfileTv.column('path', anchor=W, width=400)
-        self.listProfileTv.column('text', anchor=W, width=350)
+        self.listProfileTv.column('text', anchor=W, width=250)
         self.listProfileTv.column('stt', anchor=CENTER, width=125)
 
         self.listProfileTv.heading('#0', text='No.', anchor=CENTER)
@@ -113,7 +118,6 @@ class Chrome(tkinter.Frame):
         self.listProfileTv.heading('path', text='Profile Path', anchor=W)
         self.listProfileTv.heading('text', text='Profile Text', anchor=W)
         self.listProfileTv.heading('stt', text='Status', anchor=CENTER)
-
         self.loadListProfile()
 
     def runAuto(self):
@@ -137,75 +141,111 @@ class Chrome(tkinter.Frame):
             threading.Thread(target=self.initAuto, args=(profileDatas,)).start()
 
     def initAuto(self, profileDatas):
+        user32 = ctypes.windll.user32
+        screensize = user32.GetSystemMetrics(0), user32.GetSystemMetrics(1)
         firstNow = datetime.now().second
         firstRun = True
-        groupName = open(self.settingPath + 'group_name.txt', "r").read()
-        keyText = 0
+        setting = self.getSetting()
+        groupName = setting['groupName']
+        maxThread = int(setting['thread'])
+        key = 0
         threads = []
         while self.isAutoRuning:
             nowSecond = datetime.now().second
             if firstNow == nowSecond or firstRun:
+                width = 480
+                height = 480
+                widthN = 0
+                heightN = 0
                 for profileName in profileDatas:
                     pathProfile = profileDatas[profileName]['path']
                     textProfile = profileDatas[profileName]['text'].split(',')
-                    tempKeyText = keyText % textProfile.__len__()
+                    tempKeyText = key % textProfile.__len__()
                     text = textProfile[tempKeyText]
+                    resWidth = width * widthN
+                    resHeight = height * heightN
+                    if resWidth > screensize[0]:
+                        heightN = heightN + 1
+                        widthN = 0
+                        resWidth = width * widthN
+                        resHeight = height * heightN
+                    if resHeight > screensize[1]:
+                        heightN = 0
+                        widthN = 0
+                        resWidth = width * widthN
+                        resHeight = height * heightN
+
+                    position = {'x': resWidth, 'y': resHeight}
                     if len(profileDatas) == 1:
                         threadWorks = threading.Thread(target=self.autoFunction,
-                                                       args=(pathProfile, groupName, text))
+                                                       args=(pathProfile, groupName, text, position))
                         threadWorks.start()
                         threadWorks.join()
                     else:
-                        if len(threads) < 2:
+                        if len(threads) < maxThread or (maxThread > len(profileDatas) > len(threads)):
                             threadWorks = threading.Thread(target=self.autoFunction,
-                                                           args=(pathProfile, groupName, text))
+                                                           args=(pathProfile, groupName, text, position))
                             threads.append(threadWorks)
 
-                        if len(threads) == 2:
+                        if len(threads) == maxThread or len(threads) == len(profileDatas):
                             for thread in threads:
                                 thread.start()
                             for thread in threads:
                                 thread.join()
                             threads = []
                             threadWorks = threading.Thread(target=self.autoFunction,
-                                                           args=(pathProfile, groupName, text))
+                                                           args=(pathProfile, groupName, text, position))
                             threads.append(threadWorks)
-                keyText += 1
+                    widthN = widthN + 1
+                key = key + 1
                 # firstRun = False
 
-    def autoFunction(self, pathProfile, groupName, text):
+    def autoFunction(self, pathProfile, groupName, text, position):
         profileName = pathProfile.split("\\")[-1]
         ### Chrome
-        userDataProfileDir = str(fr'--user-data-dir={pathProfile}')
-        options = ChromeOptions()
-        options.add_argument(userDataProfileDir)
-        options.add_argument("--disable-extensions")
-        options.add_experimental_option("prefs", {"profile.default_content_setting_values.notifications": 1})
-        driver = webdriver.Chrome(service=self.serviceChrome, options=options)
-        url = "https://web.telegram.org/z"
-        driver.get(url)
         try:
-            self.logAutoRuning(profileName + ': Opening Browser...')
-            time.sleep(2)
-            searchInput = WebDriverWait(driver, 3).until(
-                EC.presence_of_element_located((By.ID, "telegram-search-input")))
-            self.logAutoRuning(profileName + ': Finding Group Chat...')
-            searchInput.send_keys(groupName)
-            resultFilter = WebDriverWait(driver, 10).until(
-                EC.presence_of_element_located((By.CLASS_NAME, "chat-selection")))
-            self.logAutoRuning(profileName + ': Select Group Chat...')
-            searchInput.send_keys(Keys.RETURN)
-            textInput = WebDriverWait(driver, 3).until(EC.presence_of_element_located((By.ID, "editable-message-text")))
-            time.sleep(1)
-            self.logAutoRuning(profileName + ': Inputting Text...')
-            textInput.send_keys(text)
-            self.logAutoRuning(profileName + ': Submit Text...')
-            textInput.send_keys(Keys.RETURN)
-            self.logAutoRuning(profileName + ': Finished...')
-            driver.close()
+            userDataProfileDir = str(fr'--user-data-dir={pathProfile}')
+            options = ChromeOptions()
+            options.add_argument(userDataProfileDir)
+            options.add_argument("--disable-extensions")
+            options.add_experimental_option("prefs", {"profile.default_content_setting_values.notifications": 1})
+            driver = webdriver.Chrome(service=self.serviceChrome, options=options)
+            driver.set_window_size(480, 480)
+            driver.set_window_position(position['x'], position['y'])
+            url = "https://web.telegram.org/z"
+            driver.get(url)
+            try:
+                self.logAutoRuning(profileName + ': Opening Browser...')
+                searchInput = WebDriverWait(driver, 5).until(
+                    EC.presence_of_element_located((By.ID, "telegram-search-input")))
+                time.sleep(1)
+
+                self.logAutoRuning(profileName + ': Finding Group Chat...')
+                searchInput.click()
+                searchInput.send_keys(groupName)
+                resultFilter = WebDriverWait(driver, 5).until(
+                    EC.presence_of_element_located((By.CLASS_NAME, "chat-selection")))
+                self.logAutoRuning(profileName + ': Select Group Chat...')
+                searchInput.send_keys(Keys.RETURN)
+                time.sleep(2)
+
+                textInput = WebDriverWait(driver, 5).until(
+                    EC.presence_of_element_located((By.ID, "editable-message-text")))
+                self.logAutoRuning(profileName + ': Inputting Text...')
+                textInput.clear()
+                textInput.send_keys(text)
+                time.sleep(2)
+                textInput.send_keys(Keys.RETURN)
+                self.logAutoRuning(profileName + ': Submit Text...')
+                self.logAutoRuning(profileName + ': Finished...')
+                driver.close()
+            except Exception as e:
+                self.logAutoRuning(profileName + ': Not Found Element!!!')
+                self.logAutoRuning(profileName + ': Quit Browser...')
+                driver.close()
         except Exception as e:
-            print("Not Found Element")
-            driver.close()
+            self.logAutoRuning(profileName + ': Error Browser')
+            self.logAutoRuning(profileName + ': Quit Browser...')
 
     def stopAuto(self):
         self.isAutoRuning = False
@@ -216,23 +256,41 @@ class Chrome(tkinter.Frame):
         self.autoLogText.insert('end', msg + '\n')
 
     def groupNameView(self):
-        self.groupNamePopup = Toplevel(self)
-        self.groupNamePopup.geometry("276x110")
-        self.groupNamePopup.title("Update Group Name")
-        groupName = open(self.settingPath + 'group_name.txt', 'r').read()
-        Label(self.groupNamePopup, text="Group Name", font=('bold', 14)).grid(row=0)
-        groupNameInput = StringVar(value=groupName)
-        self.groupNameData['groupNameEntry'] = Entry(self.groupNamePopup, textvariable=groupNameInput, width=40)
-        self.groupNameData['groupNameEntry'].grid(row=1, padx=5, ipadx=10, ipady=5)
-        Button(self.groupNamePopup, text='Update', width=15, height=2, command=self.saveGroupName) \
+        self.settingPopup['groupName'] = Toplevel(self)
+        self.settingPopup['groupName'].geometry("276x110")
+        self.settingPopup['groupName'].title("Update Group Name")
+        setting = self.getSetting()
+        Label(self.settingPopup['groupName'], text="Group Name", font=('bold', 14)).grid(row=0)
+        groupNameInput = StringVar(value=setting['groupName'])
+        self.settingData['groupNameEntry'] = Entry(self.settingPopup['groupName'], textvariable=groupNameInput, width=40)
+        self.settingData['groupNameEntry'].grid(row=1, padx=5, ipadx=10, ipady=5)
+        Button(self.settingPopup['groupName'], text='Update', width=15, height=2, command=self.saveGroupName) \
             .grid(row=2, padx=5, pady=5)
 
     def saveGroupName(self):
-        groupName = self.groupNameData['groupNameEntry'].get()
-        groupNameFile = open(self.settingPath + 'group_name.txt', 'w')
-        groupNameFile.write(groupName)
-        groupNameFile.close()
-        self.groupNamePopup.destroy()
+        setting = self.getSetting()
+        setting['groupName'] = self.settingData['groupNameEntry'].get()
+        self.updateSetting(setting)
+        self.settingPopup['groupName'].destroy()
+
+    def threadView(self):
+        self.settingPopup['thread'] = Toplevel(self)
+        self.settingPopup['thread'].geometry("276x110")
+        self.settingPopup['thread'].title("Update Number Of Running Window")
+        setting = self.getSetting()
+
+        Label(self.settingPopup['thread'], text="Number Of Running Window", font=('bold', 14)).grid(row=0)
+        threadInput = StringVar(value=setting['thread'])
+        self.settingData['threadEntry'] = Entry(self.settingPopup['thread'], textvariable=threadInput, width=40)
+        self.settingData['threadEntry'].grid(row=1, padx=5, ipadx=10, ipady=5)
+        Button(self.settingPopup['thread'], text='Update', width=15, height=2, command=self.threadSave) \
+            .grid(row=2, padx=10, pady=5, ipadx=10)
+
+    def threadSave(self):
+        setting = self.getSetting()
+        setting['thread'] = self.settingData['threadEntry'].get()
+        self.updateSetting(setting)
+        self.settingPopup['thread'].destroy()
 
     def addProfileView(self):
         self.addProfilePopup = Toplevel(self)
@@ -256,19 +314,24 @@ class Chrome(tkinter.Frame):
             self.updateProfileData(profileData)
             self.loadListProfile()
             self.addProfilePopup.destroy()
-            try:
-                options = ChromeOptions()
-                options.add_argument(fr'user-data-dir={profilePath}\{profileName}')
-                driver = webdriver.Chrome(service=self.serviceChrome, options=options)
-                url = "https://web.telegram.org/z"
-                driver.get(url)
-                WebDriverWait(driver, 9999).until(EC.presence_of_element_located((By.ID, "telegram-search-input")))
-                driver.quit()
-                profileData[profileName]['stt'] = 1
-                self.updateProfileData(profileData)
-                self.loadListProfile()
-            except Exception as e:
-                print("Error Create Profile: " + str(e))
+            threading.Thread(target=self.verifySignedIn, args=(profileName,)).start()
+
+    def verifySignedIn(self, profileName):
+        profileData = self.getProfileData()
+        profilePath = profileData[profileName]['path']
+        try:
+            options = ChromeOptions()
+            options.add_argument(fr'user-data-dir={profilePath}')
+            driver = webdriver.Chrome(service=self.serviceChrome, options=options)
+            url = "https://web.telegram.org/z"
+            driver.get(url)
+            WebDriverWait(driver, 9999).until(EC.presence_of_element_located((By.ID, "telegram-search-input")))
+            driver.quit()
+            profileData[profileName]['stt'] = 1
+            self.updateProfileData(profileData)
+            self.loadListProfile()
+        except Exception as e:
+            print("Error Create Profile: " + str(e))
 
     def textProfileView(self):
         profileFocus = self.listProfileTv.focus()
@@ -300,6 +363,7 @@ class Chrome(tkinter.Frame):
             if profileName in profileDatas.keys():
                 profileDatas[profileName]['text'] = profileText
                 self.updateProfileData(profileDatas)
+                self.loadListProfile()
         self.textProfilePopup.destroy()
 
     def deleteProfile(self):
@@ -323,6 +387,14 @@ class Chrome(tkinter.Frame):
     def updateProfileData(self, profileDatas):
         fileProfileDatas = open(self.settingPath + 'profile_data.json', 'w')
         fileProfileDatas.write(json.dumps(profileDatas))
+        fileProfileDatas.close()
+
+    def getSetting(self):
+        return json.loads(open(self.settingPath + r'setting.json', 'r').read())
+
+    def updateSetting(self, settingData):
+        fileProfileDatas = open(self.settingPath + 'setting.json', 'w')
+        fileProfileDatas.write(json.dumps(settingData))
         fileProfileDatas.close()
 
     def loadListProfile(self):
@@ -366,12 +438,10 @@ class Firefox(tkinter.Frame):
         self.windowWidth = 350
         self.windowHeight = 200
         tkinter.Frame.__init__(self, parent)
+        Label(self, text="In Development...", width=20, height=5, font=('bold', 16)).pack()
+        Button(self, text='Back', width=25, height=2, command=lambda: controller.show_frame('FirstPage'), bg='#e2e6ea',
+               fg='#212529').pack()
 
-    def createProfile(self):
-        print('Chrome: Create Profile')
-
-    def runAuto(self):
-        print('Chrome: Run Auto')
 
 
 if __name__ == '__main__':
