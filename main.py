@@ -153,6 +153,7 @@ class Chrome(tkinter.Frame):
         while self.isAutoRuning:
             nowSecond = datetime.now().second
             if firstNow == nowSecond or firstRun:
+                self.logAutoRuning('Start Spam...')
                 width = 480
                 height = 480
                 widthN = 0
@@ -198,7 +199,7 @@ class Chrome(tkinter.Frame):
                             threads.append(threadWorks)
                     widthN = widthN + 1
                 key = key + 1
-                # firstRun = False
+                firstRun = False
 
     def autoFunction(self, pathProfile, groupName, text, position):
         profileName = pathProfile.split("\\")[-1]
@@ -220,32 +221,32 @@ class Chrome(tkinter.Frame):
                     EC.presence_of_element_located((By.ID, "telegram-search-input")))
                 time.sleep(1)
 
-                self.logAutoRuning(profileName + ': Finding Group Chat...')
+                # self.logAutoRuning(profileName + ': Finding Group Chat...')
                 searchInput.click()
                 searchInput.send_keys(groupName)
                 resultFilter = WebDriverWait(driver, 5).until(
                     EC.presence_of_element_located((By.CLASS_NAME, "chat-selection")))
-                self.logAutoRuning(profileName + ': Select Group Chat...')
+                # self.logAutoRuning(profileName + ': Select Group Chat...')
                 searchInput.send_keys(Keys.RETURN)
                 time.sleep(2)
 
                 textInput = WebDriverWait(driver, 5).until(
                     EC.presence_of_element_located((By.ID, "editable-message-text")))
-                self.logAutoRuning(profileName + ': Inputting Text...')
+                # self.logAutoRuning(profileName + ': Inputting Text...')
                 textInput.clear()
                 textInput.send_keys(text)
                 time.sleep(2)
                 textInput.send_keys(Keys.RETURN)
-                self.logAutoRuning(profileName + ': Submit Text...')
+                # self.logAutoRuning(profileName + ': Submit Text...')
                 self.logAutoRuning(profileName + ': Finished...')
                 driver.close()
             except Exception as e:
                 self.logAutoRuning(profileName + ': Not Found Element!!!')
-                self.logAutoRuning(profileName + ': Quit Browser...')
+                # self.logAutoRuning(profileName + ': Quit Browser...')
                 driver.close()
         except Exception as e:
             self.logAutoRuning(profileName + ': Error Browser')
-            self.logAutoRuning(profileName + ': Quit Browser...')
+            # self.logAutoRuning(profileName + ': Quit Browser...')
 
     def stopAuto(self):
         self.isAutoRuning = False
@@ -253,7 +254,7 @@ class Chrome(tkinter.Frame):
         self.autoLog.destroy()
 
     def logAutoRuning(self, msg):
-        self.autoLogText.insert('end', msg + '\n')
+        self.autoLogText.insert('end', str(datetime.now()) + f': {msg}\n')
 
     def groupNameView(self):
         self.settingPopup['groupName'] = Toplevel(self)
