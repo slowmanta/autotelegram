@@ -62,7 +62,8 @@ class FirstPage(tkinter.Frame):
 
 class Chrome(tkinter.Frame):
     def __init__(self, parent, controller):
-        self.isAutoRuning = False
+        self.firstTimeAutoRunning = 99
+        self.isAutoRunning = False
         self.autoLogText = None
         self.addProfilePopup = None
         self.textProfilePopup = None
@@ -121,6 +122,7 @@ class Chrome(tkinter.Frame):
         self.loadListProfile()
 
     def runAuto(self):
+        self.firstTimeAutoRunning = datetime.now().second
         self.autoLog = Toplevel(self)
         self.autoLog.geometry("540x450")
         self.autoLog.title("Auto Runing")
@@ -134,8 +136,6 @@ class Chrome(tkinter.Frame):
             .grid(row=2, column=0, pady=7)
 
         self.logAutoRuning('Initialization...')
-
-        self.isAutoRuning = True
         profileDatas = self.getProfileData()
         if len(profileDatas) > 0:
             threading.Thread(target=self.initAuto, args=(profileDatas,)).start()
@@ -143,17 +143,18 @@ class Chrome(tkinter.Frame):
     def initAuto(self, profileDatas):
         user32 = ctypes.windll.user32
         screensize = user32.GetSystemMetrics(0), user32.GetSystemMetrics(1)
-        firstNow = datetime.now().second
         firstRun = True
         setting = self.getSetting()
         groupName = setting['groupName']
         maxThread = int(setting['thread'])
         key = 0
         threads = []
-        while self.isAutoRuning:
+        print("START LOOP...")
+        while self.firstTimeAutoRunning <= 60:
             nowSecond = datetime.now().second
-            if firstNow == nowSecond or firstRun:
-                self.logAutoRuning('Start Spam...')
+            time.sleep(1)
+            if self.firstTimeAutoRunning == nowSecond or firstRun:
+                self.logAutoRuning('START...')
                 width = 480
                 height = 480
                 widthN = 0
@@ -193,13 +194,18 @@ class Chrome(tkinter.Frame):
                                 thread.start()
                             for thread in threads:
                                 thread.join()
+                            widthN = 0
+                            heightN = 0
                             threads = []
                             threadWorks = threading.Thread(target=self.autoFunction,
                                                            args=(pathProfile, groupName, text, position))
                             threads.append(threadWorks)
                     widthN = widthN + 1
+                threads = []
                 key = key + 1
                 firstRun = False
+                self.logAutoRuning('===== END =====')
+                self.logAutoRuning('-----------------------------')
 
     def autoFunction(self, pathProfile, groupName, text, position):
         profileName = pathProfile.split("\\")[-1]
@@ -216,40 +222,31 @@ class Chrome(tkinter.Frame):
             url = "https://web.telegram.org/z"
             driver.get(url)
             try:
-                self.logAutoRuning(profileName + ': Opening Browser...')
+                self.logAutoRuning(profileName + ': Running')
                 searchInput = WebDriverWait(driver, 5).until(
                     EC.presence_of_element_located((By.ID, "telegram-search-input")))
-                time.sleep(1)
-
-                # self.logAutoRuning(profileName + ': Finding Group Chat...')
                 searchInput.click()
+                time.sleep(2)
                 searchInput.send_keys(groupName)
                 resultFilter = WebDriverWait(driver, 5).until(
                     EC.presence_of_element_located((By.CLASS_NAME, "chat-selection")))
-                # self.logAutoRuning(profileName + ': Select Group Chat...')
                 searchInput.send_keys(Keys.RETURN)
                 time.sleep(2)
-
                 textInput = WebDriverWait(driver, 5).until(
                     EC.presence_of_element_located((By.ID, "editable-message-text")))
-                # self.logAutoRuning(profileName + ': Inputting Text...')
                 textInput.clear()
                 textInput.send_keys(text)
-                time.sleep(2)
                 textInput.send_keys(Keys.RETURN)
-                # self.logAutoRuning(profileName + ': Submit Text...')
-                self.logAutoRuning(profileName + ': Finished...')
+                self.logAutoRuning(profileName + ': Done...')
                 driver.close()
             except Exception as e:
                 self.logAutoRuning(profileName + ': Not Found Element!!!')
-                # self.logAutoRuning(profileName + ': Quit Browser...')
                 driver.close()
         except Exception as e:
             self.logAutoRuning(profileName + ': Error Browser')
-            # self.logAutoRuning(profileName + ': Quit Browser...')
 
     def stopAuto(self):
-        self.isAutoRuning = False
+        self.firstTimeAutoRunning = 99
         self.autoLogText.insert('end', 'Stopping...\n')
         self.autoLog.destroy()
 
