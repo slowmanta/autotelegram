@@ -241,10 +241,6 @@ class Chrome(tkinter.Frame):
                 textInput.clear()
                 textInput.send_keys(text)
                 textInput.send_keys(Keys.RETURN)
-                # buttonSend = WebDriverWait(driver, 5).until(
-                #     EC.presence_of_element_located((By.CLASS_NAME, "send")))
-                # buttonSend.click()
-                # self.logAutoRuning(profileName + ': Submit Text...')
                 time.sleep(2)
                 self.logAutoRuning(profileName + ': Done...')
                 driver.close()
