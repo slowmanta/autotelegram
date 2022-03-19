@@ -230,6 +230,10 @@ class Chrome(tkinter.Frame):
                 searchInput.send_keys(Keys.RETURN)
                 time.sleep(2)
 
+                if driver.find_element(By.CSS_SELECTOR, '.messages-layout .ScrollDownButton button'):
+                    driver.find_element(By.CSS_SELECTOR, '.messages-layout .ScrollDownButton button').click()
+                    time.sleep(2)
+
                 textInput = WebDriverWait(driver, 5).until(
                     EC.presence_of_element_located((By.ID, "editable-message-text")))
                 # self.logAutoRuning(profileName + ': Inputting Text...')
@@ -237,11 +241,15 @@ class Chrome(tkinter.Frame):
                 textInput.send_keys(text)
                 time.sleep(2)
                 textInput.send_keys(Keys.RETURN)
+                # buttonSend = WebDriverWait(driver, 5).until(
+                #     EC.presence_of_element_located((By.CLASS_NAME, "send")))
+                # buttonSend.click()
                 # self.logAutoRuning(profileName + ': Submit Text...')
                 self.logAutoRuning(profileName + ': Finished...')
+                time.sleep(2)
                 driver.close()
             except Exception as e:
-                self.logAutoRuning(profileName + ': Not Found Element!!!')
+                self.logAutoRuning(profileName + ':' + e)
                 # self.logAutoRuning(profileName + ': Quit Browser...')
                 driver.close()
         except Exception as e:
@@ -359,7 +367,7 @@ class Chrome(tkinter.Frame):
         if profileFocus != '':
             profileText = self.profileData['textProfileEntry'].get()
             profileDataItem = self.listProfileTv.item(profileFocus)
-            profileName = profileDataItem.get('values')[0]
+            profileName = str(profileDataItem.get('values')[0])
             profileDatas = self.getProfileData()
             if profileName in profileDatas.keys():
                 profileDatas[profileName]['text'] = profileText
@@ -415,8 +423,8 @@ class Chrome(tkinter.Frame):
         if profileFocus != '':
             profileData = self.getProfileData()
             profileDataItem = self.listProfileTv.item(profileFocus)
-            profileName = profileDataItem.get('values')[0]
-            profilePath = profileDataItem.get('values')[1]
+            profileName = str(profileDataItem.get('values')[0])
+            profilePath = str(profileDataItem.get('values')[1])
             profileStt = profileData[profileName]['stt']
             try:
                 options = ChromeOptions()
