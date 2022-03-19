@@ -193,13 +193,18 @@ class Chrome(tkinter.Frame):
                                 thread.start()
                             for thread in threads:
                                 thread.join()
+                            widthN = 0
+                            heightN = 0
                             threads = []
                             threadWorks = threading.Thread(target=self.autoFunction,
                                                            args=(pathProfile, groupName, text, position))
                             threads.append(threadWorks)
                     widthN = widthN + 1
+                threads = []
                 key = key + 1
                 firstRun = False
+                self.logAutoRuning('===== END =====')
+                self.logAutoRuning('-----------------------------')
 
     def autoFunction(self, pathProfile, groupName, text, position):
         profileName = pathProfile.split("\\")[-1]
@@ -216,17 +221,14 @@ class Chrome(tkinter.Frame):
             url = "https://web.telegram.org/z"
             driver.get(url)
             try:
-                self.logAutoRuning(profileName + ': Opening Browser...')
+                self.logAutoRuning(profileName + ': Running')
                 searchInput = WebDriverWait(driver, 5).until(
                     EC.presence_of_element_located((By.ID, "telegram-search-input")))
-                time.sleep(1)
-
-                # self.logAutoRuning(profileName + ': Finding Group Chat...')
                 searchInput.click()
+                time.sleep(2)
                 searchInput.send_keys(groupName)
                 resultFilter = WebDriverWait(driver, 5).until(
                     EC.presence_of_element_located((By.CLASS_NAME, "chat-selection")))
-                # self.logAutoRuning(profileName + ': Select Group Chat...')
                 searchInput.send_keys(Keys.RETURN)
                 time.sleep(2)
 
@@ -236,17 +238,15 @@ class Chrome(tkinter.Frame):
 
                 textInput = WebDriverWait(driver, 5).until(
                     EC.presence_of_element_located((By.ID, "editable-message-text")))
-                # self.logAutoRuning(profileName + ': Inputting Text...')
                 textInput.clear()
                 textInput.send_keys(text)
-                time.sleep(2)
                 textInput.send_keys(Keys.RETURN)
                 # buttonSend = WebDriverWait(driver, 5).until(
                 #     EC.presence_of_element_located((By.CLASS_NAME, "send")))
                 # buttonSend.click()
                 # self.logAutoRuning(profileName + ': Submit Text...')
-                self.logAutoRuning(profileName + ': Finished...')
                 time.sleep(2)
+                self.logAutoRuning(profileName + ': Done...')
                 driver.close()
             except Exception as e:
                 self.logAutoRuning(profileName + ':' + e)
