@@ -91,13 +91,15 @@ class Chrome(tkinter.Frame):
         Button(self, text='Delete Profile', width=25, height=2, command=self.deleteProfile, bg='#c82333', fg='#fff') \
             .grid(row=4, column=0, padx=5, pady=5)
 
-        Button(self, text='Number Of Running Window', width=25, height=2, command=self.threadView, bg='#17a2b8', fg='#fff') \
+        Button(self, text='Number Of Running Window', width=25, height=2, command=self.threadView, bg='#17a2b8',
+               fg='#fff') \
             .grid(row=5, column=0, padx=5, pady=5)
 
         Button(self, text='Run Auto', width=25, height=2, command=self.runAuto, bg='#28a745', fg='#fff') \
             .grid(row=6, column=0, padx=5, pady=5)
 
-        Button(self, text='Back', width=25, height=2, command=lambda: controller.show_frame('FirstPage'), bg='#e2e6ea', fg='#212529') \
+        Button(self, text='Back', width=25, height=2, command=lambda: controller.show_frame('FirstPage'), bg='#e2e6ea',
+               fg='#212529') \
             .grid(row=7, column=0, padx=5, pady=5)
 
         Label(self, text='List Profiles', font=('bold', 16)) \
@@ -159,7 +161,7 @@ class Chrome(tkinter.Frame):
                 height = 480
                 widthN = 0
                 heightN = 0
-                tempKeyGroupName = keyGroupName %  groupNames.__len__()
+                tempKeyGroupName = keyGroupName % groupNames.__len__()
                 groupName = groupNames[tempKeyGroupName]
                 for profileName in profileDatas:
                     pathProfile = profileDatas[profileName]['path']
@@ -237,10 +239,12 @@ class Chrome(tkinter.Frame):
                 time.sleep(2)
 
                 try:
-                    driver.find_element(By.CSS_SELECTOR, '.messages-layout .ScrollDownButton button').click()
-                    time.sleep(2)
+                    while True:
+                        goToBottomButton = driver.find_element(By.CSS_SELECTOR, '.messages-layout '
+                                                                                '.ScrollDownButton.revealed button')
+                        goToBottomButton.click()
                 except Exception as e:
-                    self.logAutoRuning(profileName + ': No Scroll...' )
+                    self.logAutoRuning(profileName + ': Scrolled...')
 
                 textInput = WebDriverWait(driver, 5).until(
                     EC.presence_of_element_located((By.ID, "editable-message-text")))
@@ -273,7 +277,8 @@ class Chrome(tkinter.Frame):
         setting = self.getSetting()
         Label(self.settingPopup['groupName'], text="Group Name", font=('bold', 14)).grid(row=0)
         groupNameInput = StringVar(value=setting['groupName'])
-        self.settingData['groupNameEntry'] = Entry(self.settingPopup['groupName'], textvariable=groupNameInput, width=40)
+        self.settingData['groupNameEntry'] = Entry(self.settingPopup['groupName'], textvariable=groupNameInput,
+                                                   width=40)
         self.settingData['groupNameEntry'].grid(row=1, padx=5, ipadx=10, ipady=5)
         Button(self.settingPopup['groupName'], text='Update', width=15, height=2, command=self.saveGroupName) \
             .grid(row=2, padx=5, pady=5)
@@ -452,7 +457,6 @@ class Firefox(tkinter.Frame):
         Label(self, text="In Development...", width=20, height=5, font=('bold', 16)).pack()
         Button(self, text='Back', width=25, height=2, command=lambda: controller.show_frame('FirstPage'), bg='#e2e6ea',
                fg='#212529').pack()
-
 
 
 if __name__ == '__main__':
