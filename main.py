@@ -146,9 +146,10 @@ class Chrome(tkinter.Frame):
         firstNow = datetime.now().second
         firstRun = True
         setting = self.getSetting()
-        groupName = setting['groupName']
+        groupNames = setting['groupName'].split(',')
         maxThread = int(setting['thread'])
         key = 0
+        keyGroupName = 0
         threads = []
         while self.isAutoRuning:
             nowSecond = datetime.now().second
@@ -158,6 +159,8 @@ class Chrome(tkinter.Frame):
                 height = 480
                 widthN = 0
                 heightN = 0
+                tempKeyGroupName = keyGroupName %  groupNames.__len__()
+                groupName = groupNames[tempKeyGroupName]
                 for profileName in profileDatas:
                     pathProfile = profileDatas[profileName]['path']
                     textProfile = profileDatas[profileName]['text'].split(',')
@@ -202,6 +205,7 @@ class Chrome(tkinter.Frame):
                     widthN = widthN + 1
                 threads = []
                 key = key + 1
+                keyGroupName = keyGroupName + 1
                 firstRun = False
                 self.logAutoRuning('===== END =====')
                 self.logAutoRuning('-----------------------------')
@@ -232,9 +236,11 @@ class Chrome(tkinter.Frame):
                 searchInput.send_keys(Keys.RETURN)
                 time.sleep(2)
 
-                if driver.find_element(By.CSS_SELECTOR, '.messages-layout .ScrollDownButton button'):
+                try:
                     driver.find_element(By.CSS_SELECTOR, '.messages-layout .ScrollDownButton button').click()
                     time.sleep(2)
+                except Exception as e:
+                    self.logAutoRuning(profileName + ': No Scroll...' )
 
                 textInput = WebDriverWait(driver, 5).until(
                     EC.presence_of_element_located((By.ID, "editable-message-text")))
