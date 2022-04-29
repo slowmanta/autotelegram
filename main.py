@@ -227,7 +227,7 @@ class Chrome(tkinter.Frame):
             url = "https://web.telegram.org/z"
             driver.get(url)
             try:
-                self.logAutoRuning(profileName + ': Running')
+                # self.logAutoRuning(profileName + ': Running')
                 searchInput = WebDriverWait(driver, 5).until(
                     EC.presence_of_element_located((By.ID, "telegram-search-input")))
                 searchInput.click()
@@ -245,14 +245,14 @@ class Chrome(tkinter.Frame):
                         goToBottomButton.click()
                 except Exception as e:
                     self.logAutoRuning(profileName + ': Scrolled...')
-
+                time.sleep(2)
                 textInput = WebDriverWait(driver, 5).until(
                     EC.presence_of_element_located((By.ID, "editable-message-text")))
                 textInput.clear()
                 textInput.send_keys(text)
                 textInput.send_keys(Keys.RETURN)
                 time.sleep(2)
-                self.logAutoRuning(profileName + ': Done...')
+                self.logAutoRuning(profileName + ': ' + text + " (DONE).")
                 driver.close()
             except Exception as e:
                 self.logAutoRuning(profileName + ':' + e)
