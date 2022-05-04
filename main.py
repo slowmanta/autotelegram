@@ -241,17 +241,19 @@ class Chrome(tkinter.Frame):
                 try:
                     while True:
                         goToBottomButton = driver.find_element(By.CSS_SELECTOR, '.messages-layout '
-                                                                                '.ScrollDownButton.revealed button')
+                                                                                '.src-components-middle-FloatingActionButtons-module__revealed button')
                         goToBottomButton.click()
                 except Exception as e:
                     self.logAutoRuning(profileName + ': Scrolled...')
                 time.sleep(2)
-                textInput = WebDriverWait(driver, 5).until(
-                    EC.presence_of_element_located((By.ID, "editable-message-text")))
-                textInput.clear()
-                textInput.send_keys(text)
-                textInput.send_keys(Keys.RETURN)
-                time.sleep(2)
+                if text != '':
+                    textInput = WebDriverWait(driver, 5).until(
+                        EC.presence_of_element_located((By.ID, "editable-message-text")))
+                    textInput.clear()
+                    textInput.send_keys(text)
+                    textInput.send_keys(Keys.RETURN)
+                    time.sleep(5)
+
                 self.logAutoRuning(profileName + ': ' + text + " (DONE).")
                 driver.close()
             except Exception as e:
@@ -259,7 +261,7 @@ class Chrome(tkinter.Frame):
                 # self.logAutoRuning(profileName + ': Quit Browser...')
                 driver.close()
         except Exception as e:
-            self.logAutoRuning(profileName + ': Error Browser')
+            self.logAutoRuning(profileName + ': ' + e)
             # self.logAutoRuning(profileName + ': Quit Browser...')
 
     def stopAuto(self):
