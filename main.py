@@ -156,7 +156,6 @@ class Chrome(tkinter.Frame):
             nowSecond = datetime.now().second
             if firstNow == nowSecond or firstRun:
                 self.logAutoRuning('Start Spam...')
-                seqSend = 0
                 width = 480
                 height = 480
                 widthN = 0
@@ -184,27 +183,25 @@ class Chrome(tkinter.Frame):
                     position = {'x': resWidth, 'y': resHeight}
                     if len(profileDatas) == 1:
                         threadWorks = threading.Thread(target=self.autoFunction,
-                                                       args=(pathProfile, groupName, text, position, seqSend))
+                                                       args=(pathProfile, groupName, text, position))
                         threadWorks.start()
                         threadWorks.join()
                     else:
                         if len(threads) < maxThread or (maxThread > len(profileDatas) > len(threads)):
                             threadWorks = threading.Thread(target=self.autoFunction,
-                                                           args=(pathProfile, groupName, text, position, seqSend))
+                                                           args=(pathProfile, groupName, text, position))
                             threads.append(threadWorks)
 
                         if len(threads) == maxThread or len(threads) == len(profileDatas):
                             for thread in threads:
                                 thread.start()
-                                seqSend = seqSend + 0.5
                             for thread in threads:
                                 thread.join()
                             widthN = 0
                             heightN = 0
                             threads = []
-                            seqSend = 0
                             threadWorks = threading.Thread(target=self.autoFunction,
-                                                           args=(pathProfile, groupName, text, position, seqSend))
+                                                           args=(pathProfile, groupName, text, position))
                             threads.append(threadWorks)
                     widthN = widthN + 1
                 threads = []
@@ -214,7 +211,7 @@ class Chrome(tkinter.Frame):
                 self.logAutoRuning('===== END =====')
                 self.logAutoRuning('-----------------------------')
 
-    def autoFunction(self, pathProfile, groupName, text, position, seqSend):
+    def autoFunction(self, pathProfile, groupName, text, position):
         profileName = pathProfile.split("\\")[-1]
         ### Chrome
         try:
@@ -243,19 +240,19 @@ class Chrome(tkinter.Frame):
                 try:
                     while True:
                         goToBottomButton = driver.find_element(By.CSS_SELECTOR, '.messages-layout '
-                                                                                '.ScrollDownButton.revealed button')
+                                                                                '.src-components-middle-FloatingActionButtons-module__revealed button')
                         goToBottomButton.click()
                 except Exception as e:
                     self.logAutoRuning(profileName + ': Scrolled...')
                 time.sleep(2)
-                textInput = WebDriverWait(driver, 5).until(
-                    EC.presence_of_element_located((By.ID, "editable-message-text")))
-                textInput.clear()
-                textInput.send_keys(text)
-                if seqSend > 0:
-                    time.sleep(seqSend)
-                textInput.send_keys(Keys.RETURN)
-                time.sleep(2)
+                if text != '':
+                    textInput = WebDriverWait(driver, 5).until(
+                        EC.presence_of_element_located((By.ID, "editable-message-text")))
+                    textInput.clear()
+                    textInput.send_keys(text)
+                    textInput.send_keys(Keys.RETURN)
+                    time.sleep(5)
+
                 self.logAutoRuning(profileName + ': ' + text + " (DONE).")
                 driver.close()
             except Exception as e:
@@ -263,7 +260,7 @@ class Chrome(tkinter.Frame):
                 # self.logAutoRuning(profileName + ': Quit Browser...')
                 driver.close()
         except Exception as e:
-            self.logAutoRuning(profileName + ': Error Browser')
+            self.logAutoRuning(profileName + ': ' + e)
             # self.logAutoRuning(profileName + ': Quit Browser...')
 
     def stopAuto(self):
