@@ -56,8 +56,7 @@ class FirstPage(tkinter.Frame):
                                    command=lambda: controller.show_frame('Firefox'))
         settingFirefoxBtn.grid(row=0, column=1, pady=8, padx=6.5)
 
-        Label(self, text="Developed by Nam MT", width=30, fg='red').grid(row=1, columnspan=2)
-        Label(self, text="fb.com/congionho33", width=30, fg='blue').grid(row=2, columnspan=2)
+        Label(self, text="Bá Ca Ca", width=30, fg='red').grid(row=1, columnspan=2)
 
 
 class Chrome(tkinter.Frame):
@@ -157,6 +156,7 @@ class Chrome(tkinter.Frame):
             nowSecond = datetime.now().second
             if firstNow == nowSecond or firstRun:
                 self.logAutoRuning('Start Spam...')
+                seqSend = 0
                 width = 480
                 height = 480
                 widthN = 0
@@ -184,25 +184,27 @@ class Chrome(tkinter.Frame):
                     position = {'x': resWidth, 'y': resHeight}
                     if len(profileDatas) == 1:
                         threadWorks = threading.Thread(target=self.autoFunction,
-                                                       args=(pathProfile, groupName, text, position))
+                                                       args=(pathProfile, groupName, text, position, seqSend))
                         threadWorks.start()
                         threadWorks.join()
                     else:
                         if len(threads) < maxThread or (maxThread > len(profileDatas) > len(threads)):
                             threadWorks = threading.Thread(target=self.autoFunction,
-                                                           args=(pathProfile, groupName, text, position))
+                                                           args=(pathProfile, groupName, text, position, seqSend))
                             threads.append(threadWorks)
 
                         if len(threads) == maxThread or len(threads) == len(profileDatas):
                             for thread in threads:
                                 thread.start()
+                                seqSend = seqSend + 0.5
                             for thread in threads:
                                 thread.join()
                             widthN = 0
                             heightN = 0
                             threads = []
+                            seqSend = 0
                             threadWorks = threading.Thread(target=self.autoFunction,
-                                                           args=(pathProfile, groupName, text, position))
+                                                           args=(pathProfile, groupName, text, position, seqSend))
                             threads.append(threadWorks)
                     widthN = widthN + 1
                 threads = []
@@ -212,7 +214,7 @@ class Chrome(tkinter.Frame):
                 self.logAutoRuning('===== END =====')
                 self.logAutoRuning('-----------------------------')
 
-    def autoFunction(self, pathProfile, groupName, text, position):
+    def autoFunction(self, pathProfile, groupName, text, position, seqSend):
         profileName = pathProfile.split("\\")[-1]
         ### Chrome
         try:
@@ -250,6 +252,8 @@ class Chrome(tkinter.Frame):
                     EC.presence_of_element_located((By.ID, "editable-message-text")))
                 textInput.clear()
                 textInput.send_keys(text)
+                if seqSend > 0:
+                    time.sleep(seqSend)
                 textInput.send_keys(Keys.RETURN)
                 time.sleep(2)
                 self.logAutoRuning(profileName + ': ' + text + " (DONE).")
